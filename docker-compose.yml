@@ -1,0 +1,69 @@
+version: '3'
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+  backend:
+    name: backend
+    driver: bridge
+
+services:
+  client:
+    build: ./sample-app
+    image: pug-sample-app:local
+    container_name: pug-sample-app
+    restart: unless-stopped
+    networks:
+      - traefik
+    expose:
+      - 80
+    environment:
+      - PORT=80
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.pug-app.entrypoints=websecure
+      - traefik.http.routers.pug-app.rule=Host(`pug.jahiduls.mint`) && PathPrefix(`/app`)
+      - traefik.http.routers.pug-app.tls=true
+      - traefik.http.routers.pug-app.middlewares=pug-app-stripprefix@docker
+      - traefik.http.middlewares.pug-app-stripprefix.stripprefix.prefixes=/app
+  service:
+    build: ./service
+    image: pug-service:local
+    container_name: pug-service
+    restart: unless-stopped
+    networks:
+      - traefik
+      - backend
+    expose:
+      - 3000
+    environment:
+      - PORT=80
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.pug-service.entrypoints=websecure
+      - traefik.http.routers.pug-service.rule=Host(`pug.jahiduls.mint`) && PathPrefix(`/api`)
+      - traefik.http.routers.pug-service.tls=true
+      - traefik.http.routers.pug-service.middlewares=pug-service-stripprefix@docker
+      - traefik.http.middlewares.pug-service-stripprefix.stripprefix.prefixes=/api
+  openapi:
+    image: swaggerapi/swagger-ui:latest
+    container_name: pug-openapi
+    restart: unless-stopped
+    networks:
+      - traefik
+    environment:
+      - SWAGGER_JSON=/var/specs/pug.yaml
+    volumes:
+      - ./spec:/var/specs:ro
+    expose:
+      - 8080
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pug-openapi.rule=Host(`pug.jahiduls.mint`)
+      - traefik.http.routers.pug-openapi.entrypoints=websecure
+      - traefik.http.routers.pug-openapi.tls=true
+      - traefik.http.routers.pug-openapi.service=pug-openapi@docker
+      - traefik.http.services.pug-openapi.loadbalancer.server.port=8080
