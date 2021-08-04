@@ -1,0 +1,109 @@
+openapi: 3.0.2
+
+info:
+  title: Pug API
+  description: Pug-as-a-service provides an endpoint to send a template and data to and returns the pug-rendered html
+  version: 0.1.0
+  license:
+    name: MIT
+    url: https://unlicense.org
+
+servers:
+  - url: http://localhost:3000
+    description: Development Server
+  - url: https://pug.jahiduls.mint/api
+    description: Docker Server
+
+tags:
+  - name: health
+    description: Health related APIs
+  - name: pug
+    description: Pug related APIs
+
+paths:
+  /ping:
+    get:
+      description: Health check
+      operationId: checkHealth
+      tags:
+        - health
+      responses:
+        '200':
+          $ref: '#/components/responses/PingResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /:
+    post:
+      description: Generate pug html
+      operationId: generate
+      tags:
+        - pug
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PugInput'
+      responses:
+        '200':
+          $ref: '#/components/responses/PugResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        code:
+          type: number
+        message:
+          type: string
+    PugInput:
+      type: object
+      required:
+        - template
+        - data
+      properties:
+        template:
+          type: string
+        data:
+          type: object
+    PugOutput:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PugResponse:
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PugOutput'
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PingResponse:
+      description: Success
+      content:
+        text/plain:
+          schema:
+            type: string
+    ServiceUnavailable:
+      description: Service Unavailable
