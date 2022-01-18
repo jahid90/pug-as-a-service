@@ -7,7 +7,7 @@
     "start": "node src/server.js"
   },
   "dependencies": {
-    "axios": "^0.23.0",
+    "axios": "^0.25.0",
     "express": "^4.17.1"
   }
 }
